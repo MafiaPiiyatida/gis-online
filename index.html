@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="initial-scale=1, user-scalable=no, maximum-scale=1, width=device-width">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="stylesheet" href="./resources/ol.css">
+    <link rel="stylesheet" href="resources/fontawesome-all.min.css">
+    <link rel="stylesheet" href="./resources/ol-layerswitcher.css">
+    <link rel="stylesheet" href="./resources/qgis2web.css">
+    <style>
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+            background-color: #ffffff;
+        }
+        .ol-control > * {
+            background-color: #f8f8f8!important;
+            color: #444444!important;
+            border-radius: 0px;
+        }
+        .ol-attribution a, .gcd-gl-input::placeholder, .search-layer-input-search::placeholder {
+            color: #444444!important;
+        }
+        .search-layer-input-search {
+            background-color: #f8f8f8!important;
+        }
+        .ol-control > *:focus, .ol-control > *:hover {
+            background-color: rgba(248, 248, 248, 0.7)!important;
+        } 
+        .ol-control {
+            background-color: rgba(255,255,255,.4) !important;
+            padding: 2px !important;
+        }
+        #search-box {
+            position: absolute;
+            top: 20px; /* Distance from the top of the screen */
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #fff;
+            width: 300px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        #search-results {
+            position: absolute;
+            top: calc(20px + 40px); /* Distance from the top plus height of search box */
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            max-height: 200px;
+            overflow-y: auto;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 300px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .result-item {
+            padding: 5px;
+            cursor: pointer;
+        }
+        .result-item:hover {
+            background-color: #f0f0f0;
+        }
+    </style>
+    <title>Interactive Map with Search</title>
+</head>
+<body>
+<button id="homeButton" style="position: absolute; bottom: 10px; right: 10px; z-index: 1000;">Home</button>
+
+<div id="coordinates" style="position: absolute; bottom: 10px; left: 10px; z-index: 1000; background-color: white; padding: 5px; border: 1px solid #ccc; border-radius: 5px;">
+    Lat: 0, Long: 0
+</div>
+    <input type="text" id="search-box" placeholder="Search for features...">
+    <div id="search-results"></div>
+    <div id="map"></div>
+    <div id="popup" class="ol-popup">
+        <a href="#" id="popup-closer" class="ol-popup-closer"></a>
+        <div id="popup-content"></div>
+    </div>
+
+    <script src="resources/qgis2web_expressions.js"></script>
+    <script src="resources/polyfills.js"></script>
+    <script src="./resources/functions.js"></script>
+    <script src="./resources/ol.js"></script>
+    <script src="./resources/ol-layerswitcher.js"></script>
+    <script src="layers/_2.js"></script>
+    <script src="layers/_3.js"></script>
+    <script src="layers/_4.js"></script>
+    <script src="layers/_5.js"></script>
+    <script src="layers/47_6.js"></script>
+    <script src="layers/_7.js"></script>
+    <script src="layers/_8.js"></script>
+    <script src="layers/_9.js"></script>
+    <script src="layers/_10.js"></script>
+    <script src="layers/_11.js"></script>
+    <script src="layers/_12.js"></script>
+    <script src="layers/_13.js"></script>
+    <script src="layers/_14.js"></script>
+    <script src="layers/_15.js"></script>
+    <script src="layers/_16.js"></script>
+    <script src="layers/_17.js"></script>
+    <script src="layers/_18.js"></script>
+    <script src="styles/_2_style.js"></script>
+    <script src="styles/_3_style.js"></script>
+    <script src="styles/_4_style.js"></script>
+    <script src="styles/_5_style.js"></script>
+    <script src="styles/47_6_style.js"></script>
+    <script src="styles/_7_style.js"></script>
+    <script src="styles/_8_style.js"></script>
+    <script src="styles/_9_style.js"></script>
+    <script src="styles/_10_style.js"></script>
+    <script src="styles/_11_style.js"></script>
+    <script src="styles/_12_style.js"></script>
+    <script src="styles/_13_style.js"></script>
+    <script src="styles/_14_style.js"></script>
+    <script src="styles/_15_style.js"></script>
+    <script src="styles/_16_style.js"></script>
+    <script src="styles/_17_style.js"></script>
+    <script src="styles/_18_style.js"></script>
+    <script src="./layers/layers.js" type="text/javascript"></script> 
+    <script src="./resources/Autolinker.min.js"></script>
+    <script src="./resources/qgis2web.js"></script>
+<script>
+function goHome() {
+    var view = map.getView();  // รับ View ของแผนที่
+    view.animate({
+        center: ol.proj.fromLonLat([101.2000, 13.1000]),  // พิกัดศูนย์กลางของพื้นที่ ชลบุรี, ระยอง, ฉะเชิงเทรา
+        zoom: 8,  // ระดับซูมที่ต้องการ (ปรับตามต้องการ)
+        duration: 1000  // ระยะเวลาการเคลื่อนไหวในหน่วยมิลลิวินาที
+    });
+
+}
+
+// การเชื่อมโยงฟังก์ชัน goHome กับปุ่ม Home
+document.getElementById('homeButton').addEventListener('click', goHome);
+
+var mapElement = document.getElementById('map');
+var coordinatesDiv = document.getElementById('coordinates');
+
+map.on('pointermove', function(event) {
+    var coordinates = ol.proj.toLonLat(event.coordinate);
+    var lon = coordinates[0].toFixed(6);
+    var lat = coordinates[1].toFixed(6);
+    coordinatesDiv.innerHTML = 'Lat: ' + lat + ', Long: ' + lon;
+});
+
+    // Function to handle search
+    document.getElementById('search-box').addEventListener('keyup', function() {
+        var searchString = this.value.toLowerCase();
+        var searchResults = document.getElementById('search-results');
+        
+        // Clear previous results
+        searchResults.innerHTML = ''; 
+
+        // Hide search results if the search string is empty
+        if (searchString.trim() === "") {
+            searchResults.style.display = 'none';
+            return;
+        }
+
+        // Show search results if there is input
+        searchResults.style.display = 'block';
+
+        // Loop through each layer to search for features
+        map.getLayers().forEach(function(layer) {
+            if (layer.getVisible() && layer.getSource && layer.getSource().getFeatures) {
+                var source = layer.getSource();
+                var features = source.getFeatures();
+                
+                features.forEach(function(feature) {
+                    var featureProps = feature.getProperties();
+                    var names = [
+                        featureProps.name,
+                        featureProps['Reservoir_'],
+                        featureProps['Level_Stat'],
+                        featureProps['description'] // Example of another potential attribute
+                    ];
+                    var matchedName = names.find(name => name && name.toLowerCase().includes(searchString));
+
+                    if (matchedName) {
+                        var resultItem = document.createElement('div');
+                        resultItem.className = 'result-item';
+                        resultItem.textContent = matchedName;
+                        resultItem.addEventListener('click', function() {
+                            var extent = feature.getGeometry().getExtent();
+                            map.getView().fit(extent, { duration: 1000 });
+
+                            // Optionally, you can handle additional actions here
+                        });
+                        searchResults.appendChild(resultItem);
+                    }
+                });
+            }
+        });
+    });
+
+    // Hide search results when search box loses focus
+    document.getElementById('search-box').addEventListener('blur', function() {
+        setTimeout(function() {
+            document.getElementById('search-results').style.display = 'none';
+        }, 200); // Delay to allow click events to register
+    });
+
+    // Show search results when search box gains focus
+    document.getElementById('search-box').addEventListener('focus', function() {
+        if (this.value.trim() !== "") {
+            document.getElementById('search-results').style.display = 'block';
+
+        }
+    });
+</script>
+</body>
+</html>
+
+
+
